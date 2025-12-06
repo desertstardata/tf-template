@@ -1,0 +1,38 @@
+apiVersion: approuting.kubernetes.azure.com/v1alpha1
+kind: NginxIngressController
+metadata:
+  name: nginx-internal
+  namespace: airflow
+spec:
+  controllerNamePrefix: nginx-internal
+  ingressClassName: nginx-internal
+  loadBalancerAnnotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: aaa.bbb.ccc.ddd  # example: 172.21.130.254
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: airflow-ingress
+  namespace: airflow
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: aaa.bbb.ccc.ddd  # example: 172.21.130.254
+    kubernetes.azure.com/tls-cert-keyvault-uri: https://myVault.vault.azure.net/certificates/myApp-ORG-org
+spec:
+  ingressClassName: nginx-internal
+  rules:
+  - host: myHost.ORG.org
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: myApp
+            port:
+              number: 8080
+  tls:
+    - hosts:
+        - myHost.ORG.org
+      secretName: keyvault-myApp-ingress
